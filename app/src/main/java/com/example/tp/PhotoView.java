@@ -44,18 +44,24 @@ public class PhotoView extends View {
     @Override
     public void onDraw(Canvas c) {
         int i;
-
+int xCanvas=0;
+int yCanvas=0;
+int xBmp;
+int ybmp;
         for (i = 0; i < urlPhotos.size(); i++) {
             File f = new File(urlPhotos.get(i));
             Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath());
-            Bitmap mutableBitmap = bmp.copy(Bitmap.Config.ARGB_8888, true);
-
-
-            c.drawBitmap(bmp, 0, 0, mPaint);
+xBmp=bmp.getWidth();
+ybmp=bmp.getHeight();
+            c.drawBitmap(bmp, xCanvas, yCanvas, mPaint);
+            xCanvas+=xBmp;
+            if(xCanvas>200){
+                xCanvas=0;
+                yCanvas+=ybmp;
+            }
         }
 
     }
-
 
 private  int actual_image_column_index;
 
