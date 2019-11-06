@@ -51,14 +51,17 @@ int ybmp;
         for (i = 0; i < urlPhotos.size(); i++) {
             File f = new File(urlPhotos.get(i));
             Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath());
-xBmp=bmp.getWidth();
-ybmp=bmp.getHeight();
-            c.drawBitmap(bmp, xCanvas, yCanvas, mPaint);
-            xCanvas+=xBmp;
-            if(xCanvas>200){
+            Bitmap resized = Bitmap.createScaledBitmap(bmp,200, 200, true);
+
+            xBmp=resized.getWidth();
+ybmp=resized.getHeight();
+            if(xCanvas+xBmp>1080){
                 xCanvas=0;
                 yCanvas+=ybmp;
             }
+            c.drawBitmap(resized, xCanvas, yCanvas, mPaint);
+            xCanvas+=xBmp;
+
         }
 
     }
