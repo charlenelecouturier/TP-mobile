@@ -55,13 +55,31 @@ public class PhotoView extends View {
         //panned.
     private float previousTranslateX = 0f;
     private float previousTranslateY = 0f;
-    int xCanvas=0;
-    int yCanvas=0;
+    float xCanvas=0;
+    float yCanvas=0;
+
+    private ArrayList<Bitmap>listBitmap;
 
     public PhotoView(Context context) {
         super(context);
         scaleDetector = new ScaleGestureDetector(getContext(),new ScaleListener());
         urlPhotos=fetchGalleryImages(context);
+        listBitmap = new ArrayList<Bitmap>();
+        for (int i = 0; i < urlPhotos.size() && i<16; i++) {
+
+            File f = new File(urlPhotos.get(i));
+            BitmapFactory.Options option = new BitmapFactory.Options();
+            option.inSampleSize = 16;
+
+            Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option);
+            Bitmap resized = Bitmap.createScaledBitmap(bmp,216, 200, true);
+            listBitmap.add(resized);
+        }
+
+
+
+
+
         /**int i=0;
         for(i=0;i<urlPhotos.size();i++){
             File f = new File(urlPhotos.get(i));
@@ -75,8 +93,8 @@ public class PhotoView extends View {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
-    public void onDraw(Canvas c) {
-
+    protected void onDraw(Canvas c) {
+        super.onDraw(c);
         int xBmp;
         int ybmp;
         WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
@@ -86,28 +104,40 @@ public class PhotoView extends View {
         int displayWidth = size.x;
         int displayHeight = size.y;
         scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
-        for (int i = 0; i < urlPhotos.size() && i<16; i++) {
 
-            File f = new File(urlPhotos.get(i));
-            BitmapFactory.Options option = new BitmapFactory.Options();
-            option.inSampleSize = 16;
+         /*   for (int i = 0; i < urlPhotos.size() && i<16; i++) {
 
-            Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option);
-            Bitmap resized = Bitmap.createScaledBitmap(bmp,216, 200, true);
+                File f = new File(urlPhotos.get(i));
+                BitmapFactory.Options option = new BitmapFactory.Options();
+                option.inSampleSize = 16;
 
-            xBmp=resized.getWidth();
-            ybmp=resized.getHeight();
-            if(xCanvas+xBmp>1080){
-                xCanvas=0;
-                yCanvas+=ybmp;
-            }
-            c.drawBitmap(resized, xCanvas, yCanvas, mPaint);
-            xCanvas+=xBmp;
+                Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option);
+                Bitmap resized = Bitmap.createScaledBitmap(bmp,216, 200, true);
 
-        }
+                xBmp=resized.getWidth();
+                ybmp=resized.getHeight();
+                if(xCanvas+xBmp>1080){
+                    xCanvas=0;
+                    yCanvas+=ybmp;
+                }
+                c.drawBitmap(resized, xCanvas, yCanvas, mPaint);
+                xCanvas+=xBmp;
+
+            } */
+        float xactu = xCanvas;
+         for (int i = 0; i< listBitmap.size();i++){
+             xBmp= listBitmap.get(i).getWidth();
+             ybmp = listBitmap.get(i).getHeight();
+             if (xCanvas+xBmp>1080){
+                 xCanvas = xactu;
+                 yCanvas += ybmp;
+             }
+             c.drawBitmap(listBitmap.get(i),xCanvas, yCanvas,mPaint);
+             xCanvas += xBmp;
+         }
+
         c.save();
         //We're going to scale the X and Y coordinates by the same amount
-
         c.scale(this.scaleFactor, this.scaleFactor, this.scaleDetector.getFocusX(), this.scaleDetector.getFocusY());
 
         //If translateX times -1 is lesser than zero, let's set it to zero. This takes care of the left bound
@@ -176,6 +206,33 @@ private  int actual_image_column_index;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        // TODO Auto-generated method stub
+
+        switch(event.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                xCanvas = event.getX();
+                yCanvas = event.getY();
+                invalidate();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                xCanvas = event.getX();
+                yCanvas = event.getY();
+                invalidate();
+                break;
+        }
+        return true;
+    }
+
+
+
+
+
+
+
+
+
+
+   /* public boolean onTouchEvent(MotionEvent event) {
         boolean dragged=false;
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
@@ -277,7 +334,7 @@ private  int actual_image_column_index;
             invalidate();
         }
         return true;
-    }
+    } */
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
         @Override
