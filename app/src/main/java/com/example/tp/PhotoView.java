@@ -129,7 +129,7 @@ public class PhotoView extends View {
              xBmp= listBitmap.get(i).getWidth();
              ybmp = listBitmap.get(i).getHeight();
              if (xCanvas+xBmp>1080){
-                 xCanvas = xactu;
+                 xCanvas = 0;
                  yCanvas += ybmp;
              }
              c.drawBitmap(listBitmap.get(i),xCanvas, yCanvas,mPaint);
@@ -210,12 +210,12 @@ private  int actual_image_column_index;
 
         switch(event.getAction()){
             case MotionEvent.ACTION_DOWN:
-                xCanvas = event.getX();
+                xCanvas = 0;
                 yCanvas = event.getY();
                 invalidate();
                 break;
             case MotionEvent.ACTION_MOVE:
-                xCanvas = event.getX();
+                xCanvas = 0;
                 yCanvas = event.getY();
                 invalidate();
                 break;
