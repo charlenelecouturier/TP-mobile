@@ -1,14 +1,11 @@
 package com.example.tp;
 
-import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
-
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -51,7 +48,7 @@ int ybmp;
         for (i = 0; i < urlPhotos.size(); i++) {
             File f = new File(urlPhotos.get(i));
             Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath());
-            Bitmap resized = Bitmap.createScaledBitmap(bmp,200, 200, true);
+            Bitmap resized = Bitmap.createScaledBitmap(bmp,216, 200, true);
 
             xBmp=resized.getWidth();
 ybmp=resized.getHeight();
