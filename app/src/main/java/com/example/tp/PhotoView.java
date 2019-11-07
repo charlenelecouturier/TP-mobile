@@ -11,6 +11,7 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Display;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -30,54 +31,34 @@ public class PhotoView extends View {
     public Paint mPaint=new Paint();
     private ScaleGestureDetector scaleDetector;
     private float scaleFactor = 1.f;
+    private float prevScaleFactor = 1.f;
 
-    private static float MIN_ZOOM =1f;
-    private static float MAX_ZOOM = 5f;
-
-    //These constants specify the mode that we're in
-    private static int NONE = 0;
-    private static int DRAG = 1;
-    private static int ZOOM = 2;
 
     private int mode;
 
-//These two variables keep track of the X and Y coordinate of the finger when it first
-        //touches the screen
-    private float startX = 0f;
-    private float startY = 0f;
-
-    //These two variables keep track of the amount we need to translate the canvas along the X
-        //and the Y coordinate
-    private float translateX = 0f;
-    private float translateY = 0f;
-
-    //These two variables keep track of the amount we translated the X and Y coordinates, the last time we
-        //panned.
-    private float previousTranslateX = 0f;
-    private float previousTranslateY = 0f;
     float xCanvas=0;
     float yCanvas=0;
-
+    private ArrayList<Bitmap>OGBitmap;
     private ArrayList<Bitmap>listBitmap;
+    private Bitmap bmp;
 
     public PhotoView(Context context) {
         super(context);
-        scaleDetector = new ScaleGestureDetector(getContext(),new ScaleListener());
+        scaleDetector = new ScaleGestureDetector(context,new ScaleListener());
         urlPhotos=fetchGalleryImages(context);
         listBitmap = new ArrayList<Bitmap>();
+        OGBitmap = new ArrayList<Bitmap>();
         for (int i = 0; i < urlPhotos.size() && i<16; i++) {
 
             File f = new File(urlPhotos.get(i));
             BitmapFactory.Options option = new BitmapFactory.Options();
             option.inSampleSize = 16;
-
-            Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option);
+            Bitmap bmpOG = BitmapFactory.decodeFile(f.getAbsolutePath());
+            bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option);
+            OGBitmap.add(bmpOG);
             Bitmap resized = Bitmap.createScaledBitmap(bmp,216, 200, true);
             listBitmap.add(resized);
         }
-
-
-
 
 
         /**int i=0;
@@ -88,7 +69,6 @@ public class PhotoView extends View {
 
             canvas.drawBitmap(bmp, 0,0, mPaint);
         }**/
-
 }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -124,11 +104,10 @@ public class PhotoView extends View {
                 xCanvas+=xBmp;
 
             } */
-        float xactu = xCanvas;
          for (int i = 0; i< listBitmap.size();i++){
              xBmp= listBitmap.get(i).getWidth();
              ybmp = listBitmap.get(i).getHeight();
-             if (xCanvas+xBmp>1080){
+             if (xCanvas+xBmp>displayWidth){
                  xCanvas = 0;
                  yCanvas += ybmp;
              }
@@ -138,49 +117,12 @@ public class PhotoView extends View {
 
         c.save();
         //We're going to scale the X and Y coordinates by the same amount
-        c.scale(this.scaleFactor, this.scaleFactor, this.scaleDetector.getFocusX(), this.scaleDetector.getFocusY());
-
-        //If translateX times -1 is lesser than zero, let's set it to zero. This takes care of the left bound
-
-        if((translateX * -1) < 0) {
-
-            translateX = 0;
-
-        }
-
-        //This is where we take care of the right bound. We compare translateX times -1 to (scaleFactor - 1) * displayWidth.
-
-        //If translateX is greater than that value, then we know that we've gone over the bound. So we set the value of
-
-        //translateX to (1 - scaleFactor) times the display width. Notice that the terms are interchanged; it's the same
-
-        //as doing -1 * (scaleFactor - 1) * displayWidth
-        else if((translateX * -1) > (scaleFactor - 1) * displayWidth) {
-
-            translateX = (1 - scaleFactor) * displayWidth;
-        }
-        if(translateY * -1 < 0) {
-
-            translateY = 0;
-        }
-        //We do the exact same thing for the bottom bound, except in this case we use the height of the display
-        else if((translateY * -1) > (scaleFactor - 1) * displayHeight) {
-
-            translateY = (1 - scaleFactor) * displayHeight;
-        }
-        //We need to divide by the scale factor here, otherwise we end up with excessive panning based on our zoom level
-        //because the translation amount also gets scaled according to how much we've zoomed into the canvas.
-        c.translate(translateX / scaleFactor, translateY / scaleFactor);
+        c.scale(scaleFactor, scaleFactor);
 
         /* The rest of your canvas-drawing code */
         c.restore();
     }
 
-
-
-
-
-private  int actual_image_column_index;
 
     public static ArrayList<String> fetchGalleryImages(Context context) {
         ArrayList<String> galleryImageUrls;
@@ -206,29 +148,24 @@ private  int actual_image_column_index;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // TODO Auto-generated method stub
-
+        scaleDetector.onTouchEvent(event);
+        int pointerCount = event.getPointerCount();
         switch(event.getAction()){
-            case MotionEvent.ACTION_DOWN:
+           /* case MotionEvent.ACTION_DOWN:
                 xCanvas = 0;
                 yCanvas = event.getY();
                 invalidate();
-                break;
+                break;*/
             case MotionEvent.ACTION_MOVE:
+            if(pointerCount ==1){
                 xCanvas = 0;
                 yCanvas = event.getY();
                 invalidate();
                 break;
+                }
         }
         return true;
     }
-
-
-
-
-
-
-
 
 
 
@@ -340,7 +277,24 @@ private  int actual_image_column_index;
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             scaleFactor *= detector.getScaleFactor();
-            scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
+            Log.i("OG", String.valueOf(scaleFactor));
+            listBitmap.clear();
+            if(scaleFactor>prevScaleFactor){
+                for (int i =0; i<OGBitmap.size();i++){
+                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),OGBitmap.get(i).getWidth(), OGBitmap.get(i).getHeight(), true);
+                    listBitmap.add(resized);
+
+                }
+
+            }else{
+                for (int i =0; i<OGBitmap.size();i++){
+                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),216, 200, true);
+                    listBitmap.add(resized);
+                }
+            }
+            prevScaleFactor = scaleFactor;
+            xCanvas = 0;
+            yCanvas = 0;
             invalidate();
             return true;
         }
