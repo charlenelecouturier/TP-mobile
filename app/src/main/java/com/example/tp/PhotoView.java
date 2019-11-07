@@ -32,6 +32,7 @@ public class PhotoView extends View {
     private ScaleGestureDetector scaleDetector;
     private float scaleFactor = 1.f;
     private float prevScaleFactor = 1.f;
+    private boolean zoom = false;
 
 
     private int mode;
@@ -45,6 +46,7 @@ public class PhotoView extends View {
     public PhotoView(Context context) {
         super(context);
         scaleDetector = new ScaleGestureDetector(context,new ScaleListener());
+
         urlPhotos=fetchGalleryImages(context);
         listBitmap = new ArrayList<Bitmap>();
         OGBitmap = new ArrayList<Bitmap>();
@@ -83,7 +85,6 @@ public class PhotoView extends View {
         display.getSize(size);
         int displayWidth = size.x;
         int displayHeight = size.y;
-        scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
 
          /*   for (int i = 0; i < urlPhotos.size() && i<16; i++) {
 
@@ -115,12 +116,7 @@ public class PhotoView extends View {
              xCanvas += xBmp;
          }
 
-        c.save();
-        //We're going to scale the X and Y coordinates by the same amount
-        c.scale(scaleFactor, scaleFactor);
-
-        /* The rest of your canvas-drawing code */
-        c.restore();
+        zoom = false;
     }
 
 
@@ -151,18 +147,16 @@ public class PhotoView extends View {
         scaleDetector.onTouchEvent(event);
         int pointerCount = event.getPointerCount();
         switch(event.getAction()){
-           /* case MotionEvent.ACTION_DOWN:
-                xCanvas = 0;
-                yCanvas = event.getY();
-                invalidate();
-                break;*/
+
             case MotionEvent.ACTION_MOVE:
-            if(pointerCount ==1){
+            if(!zoom ){
                 xCanvas = 0;
                 yCanvas = event.getY();
+
                 invalidate();
                 break;
                 }
+
         }
         return true;
     }
@@ -277,6 +271,7 @@ public class PhotoView extends View {
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             scaleFactor *= detector.getScaleFactor();
+            zoom = true;
             Log.i("OG", String.valueOf(scaleFactor));
             listBitmap.clear();
             if(scaleFactor>prevScaleFactor){
