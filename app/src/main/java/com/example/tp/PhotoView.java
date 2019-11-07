@@ -32,14 +32,14 @@ public class PhotoView extends View {
     private float scaleFactor = 1.f;
     private float prevScaleFactor = 1.f;
     private boolean zoom = false;
-private int displayWidth;
+private int displayWidth,displayHeight;
 
     private int mode;
 
     float xCanvas=0;
     float yCanvas=0;
-    private ArrayList<Bitmap>OGBitmap, sampleBitmap , listBitmap;
-
+    private ArrayList<Bitmap>OGBitmap;
+    private ArrayList<Bitmap>listBitmap;
     private Bitmap bmp;
 
     /**
@@ -55,7 +55,6 @@ private int displayWidth;
         urlPhotos=fetchGalleryImages(context);
         listBitmap = new ArrayList<Bitmap>();
         OGBitmap = new ArrayList<Bitmap>();
-        sampleBitmap = new ArrayList<Bitmap>();
 
         for (int i = 0; i < urlPhotos.size() && i<16; i++) { //on limite à 16 pour la fluidité
 
@@ -64,16 +63,16 @@ private int displayWidth;
             option.inSampleSize = 16;
             Bitmap bmpOG = BitmapFactory.decodeFile(f.getAbsolutePath());
             bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option); //instanciation du bitmap en donction de son Path sur l'appareil
-            OGBitmap.add(bmpOG);
+            OGBitmap.add(bmp);
 
             WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
             Display display = wm.getDefaultDisplay();
             Point size = new Point();
             display.getSize(size);
           displayWidth = size.x; //largeur de l'ecram
+            displayHeight = size.y;
             Bitmap resized = Bitmap.createScaledBitmap(bmp,displayWidth/7, 120, true); //on redimensionne les BitMaps
             listBitmap.add(resized); //on ajoute le bitmap redimensionne à la liste des BitMaps
-            sampleBitmap.add(resized); // on garde en mémoire les bitmap redimensionnés
         }
 
 
@@ -177,14 +176,14 @@ private int displayWidth;
             listBitmap.clear();
             if(scaleFactor>prevScaleFactor){ //si on a zoomé
                 for (int i =0; i<OGBitmap.size();i++){
-                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),OGBitmap.get(i).getWidth(), OGBitmap.get(i).getHeight(), true); //on agrandit les photos
+                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),displayWidth,displayHeight/2   , true); //on agrandit les photos
                     listBitmap.add(resized);
 
                 }
 
             }else{
-                for (int i =0; i<sampleBitmap.size();i++){//sinon on revient a la taille initiale des photos
-                    Bitmap resized = Bitmap.createScaledBitmap(sampleBitmap.get(i),displayWidth/7, 120, true);
+                for (int i =0; i<OGBitmap.size();i++){//sinon on revient a la taille initiale des photos
+                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),displayWidth/7, 120, true);
                     listBitmap.add(resized);
                 }
             }
