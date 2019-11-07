@@ -80,7 +80,7 @@ private int displayWidth,displayHeight;
 }
 
     /**
-     * Fonction qui gère l'affichage des Photos dans un Canvas à l'ecran, placé dans un objet Paint
+     * Fonction qui gère l'affichage des Photos dans un Canvas à l'ecran, associé à l'object Paint mPaint
      * @param c  Canvas
      */
     @RequiresApi(api = Build.VERSION_CODES.O)
