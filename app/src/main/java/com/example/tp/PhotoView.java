@@ -11,21 +11,20 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Display;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
-
-
 import androidx.annotation.RequiresApi;
-
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
+/**
+ *  class PhotoView
+ *  herite de la classe View
+ *  possède des attributs Paint, ScaleGestureDetector pour la gestion de l'affichage et du zomm sur les photos
+ *  permet de recuperer et afficher les photos de l'appareil, de zoomer sur les photos et de scroller l'ecran
+ */
 public class PhotoView extends View {
     public  ArrayList<String> urlPhotos;
     public Paint mPaint=new Paint();
@@ -33,7 +32,7 @@ public class PhotoView extends View {
     private float scaleFactor = 1.f;
     private float prevScaleFactor = 1.f;
     private boolean zoom = false;
-
+private int displayWidth;
 
     private int mode;
 
@@ -43,72 +42,56 @@ public class PhotoView extends View {
     private ArrayList<Bitmap>listBitmap;
     private Bitmap bmp;
 
+    /**
+     * Contructeur de la classe PhotoView
+     * Initialise les attributs
+     * Appelle la fonction fetchGalleryImages pour recuperer tous les chemins vers les photos de l'appareil
+     * Génère une liste de Bitmap redimensionnés pour ne pas saturer la mémoire et pour pouvoir en afficher 7 par lignes
+     * @param context
+     */
     public PhotoView(Context context) {
         super(context);
         scaleDetector = new ScaleGestureDetector(context,new ScaleListener());
-
         urlPhotos=fetchGalleryImages(context);
         listBitmap = new ArrayList<Bitmap>();
         OGBitmap = new ArrayList<Bitmap>();
-        for (int i = 0; i < urlPhotos.size() && i<16; i++) {
+        for (int i = 0; i < urlPhotos.size() && i<16; i++) { //on limite à 16 pour la fluidité
 
             File f = new File(urlPhotos.get(i));
             BitmapFactory.Options option = new BitmapFactory.Options();
             option.inSampleSize = 16;
             Bitmap bmpOG = BitmapFactory.decodeFile(f.getAbsolutePath());
-            bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option);
+            bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option); //instanciation du bitmap en donction de son Path sur l'appareil
             OGBitmap.add(bmpOG);
-            Bitmap resized = Bitmap.createScaledBitmap(bmp,216, 200, true);
-            listBitmap.add(resized);
+
+            WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+            Display display = wm.getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+          displayWidth = size.x; //largeur de l'ecram
+            Bitmap resized = Bitmap.createScaledBitmap(bmp,displayWidth/5, 120, true); //on redimensionne les BitMaps
+            listBitmap.add(resized); //on ajoute le bitmap redimensionne à la liste des BitMaps
         }
 
 
-        /**int i=0;
-        for(i=0;i<urlPhotos.size();i++){
-            File f = new File(urlPhotos.get(i));
-            Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath());
-           Canvas canvas = new Canvas(bmp);
 
-            canvas.drawBitmap(bmp, 0,0, mPaint);
-        }**/
 }
 
+    /**
+     * Fonction qui gère l'affichage des Photos dans un Canvas à l'ecran, placé dans un objet Paint
+     * @param c  Canvas
+     */
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onDraw(Canvas c) {
         super.onDraw(c);
         int xBmp;
         int ybmp;
-        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-        Display display = wm.getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        int displayWidth = size.x;
-        int displayHeight = size.y;
 
-         /*   for (int i = 0; i < urlPhotos.size() && i<16; i++) {
-
-                File f = new File(urlPhotos.get(i));
-                BitmapFactory.Options option = new BitmapFactory.Options();
-                option.inSampleSize = 16;
-
-                Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath(),option);
-                Bitmap resized = Bitmap.createScaledBitmap(bmp,216, 200, true);
-
-                xBmp=resized.getWidth();
-                ybmp=resized.getHeight();
-                if(xCanvas+xBmp>1080){
-                    xCanvas=0;
-                    yCanvas+=ybmp;
-                }
-                c.drawBitmap(resized, xCanvas, yCanvas, mPaint);
-                xCanvas+=xBmp;
-
-            } */
          for (int i = 0; i< listBitmap.size();i++){
              xBmp= listBitmap.get(i).getWidth();
              ybmp = listBitmap.get(i).getHeight();
-             if (xCanvas+xBmp>displayWidth){
+             if (xCanvas+xBmp>displayWidth){ //si l'image depasse la largeur de l'ecran on retourne à la ligne
                  xCanvas = 0;
                  yCanvas += ybmp;
              }
@@ -119,7 +102,11 @@ public class PhotoView extends View {
         zoom = false;
     }
 
-
+    /**
+     * Methode aqui permet de trouver et stocker dans une ArrayListe<String> toutes les URL des images présentes sur le téléphone
+     * @param context Context
+     * @return ArrayList<String> la liste des URL de toutes les images de la gallerie de l'appareil
+     */
     public static ArrayList<String> fetchGalleryImages(Context context) {
         ArrayList<String> galleryImageUrls;
         final String[] columns = {MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID};//get all columns of type images
@@ -135,13 +122,18 @@ public class PhotoView extends View {
             imagecursor.moveToPosition(i);
             int dataColumnIndex = imagecursor.getColumnIndex(MediaStore.Images.Media.DATA);//get column index
             galleryImageUrls.add(imagecursor.getString(dataColumnIndex));//get Image from column index
-            Log.i("URLLLLL",imagecursor.getString(dataColumnIndex));
+            Log.i("PATH",imagecursor.getString(dataColumnIndex));  // on log le chemin de l'image
 
         }
         return galleryImageUrls;
     }
 
-
+    /**
+     * Fonction qui intercepte un TouchEvent
+     * On va appeler la fonction onTouchEvent du scaleDetector pour gérer le zoom
+     * @param event
+     * @return boolean
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         scaleDetector.onTouchEvent(event);
@@ -162,128 +154,35 @@ public class PhotoView extends View {
     }
 
 
-
-   /* public boolean onTouchEvent(MotionEvent event) {
-        boolean dragged=false;
-        switch (event.getAction() & MotionEvent.ACTION_MASK) {
-            case MotionEvent.ACTION_DOWN:
-
-                mode = DRAG;
-
-                //We assign the current X and Y coordinate of the finger to startX and startY minus the previously translated
-
-                //amount for each coordinates This works even when we are translating the first time because the initial
-
-                //values for these two variables is zero.
-
-                startX = event.getX() - previousTranslateX;
-
-                startY = event.getY() - previousTranslateY;
-
-                break;
-
-            case MotionEvent.ACTION_MOVE:
-
-                translateX = event.getX() - startX;
-
-                translateY = event.getY() - startY;
-
-                //We cannot use startX and startY directly because we have adjusted their values using the previous translation values.
-
-                //This is why we need to add those values to startX and startY so that we can get the actual coordinates of the finger.
-
-                double distance = Math.sqrt(Math.pow(event.getX() - (startX + previousTranslateX), 2) +
-
-                        Math.pow(event.getY() - (startY + previousTranslateY), 2)
-
-                );
-
-                if(distance > 0) {
-
-                    dragged = true;
-
-                }
-
-
-
-                break;
-
-            case MotionEvent.ACTION_POINTER_DOWN:
-
-                mode = ZOOM;
-
-                break;
-
-            case MotionEvent.ACTION_UP:
-
-                mode = NONE;
-
-                dragged = false;
-
-                //All fingers went up, so let's save the value of translateX and translateY into previousTranslateX and
-
-                //previousTranslate
-
-                previousTranslateX = translateX;
-
-                previousTranslateY = translateY;
-
-                break;
-
-
-
-            case MotionEvent.ACTION_POINTER_UP:
-                mode = DRAG;
-
-                //This is not strictly necessary; we save the value of translateX and translateY into previousTranslateX
-
-                //and previousTranslateY when the second finger goes up
-
-                previousTranslateX = translateX;
-
-                previousTranslateY = translateY;
-
-                break;
-
-        }
-
-        scaleDetector.onTouchEvent(event);
-
-        //We redraw the canvas only in the following cases:
-
-        //
-
-        // o The mode is ZOOM
-
-        //        OR
-
-        // o The mode is DRAG and the scale factor is not equal to 1 (meaning we have zoomed) and dragged is
-
-        //   set to true (meaning the finger has actually moved)
-
-        if ((mode == DRAG && scaleFactor != 1f && dragged) || mode == ZOOM) {
-            invalidate();
-        }
-        return true;
-    } */
-
+    /**
+     * class ScaleListner
+     * Permet de créer un ScaleGestureDestector qui va detecter si une action de zoom est effectuée
+     *
+     */
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+
+        /**
+         *fonction qui permet de zoomer ou dezoomer les images en fonction de si l'utilisateur agrandit ou retrecit le scalefFactor
+         * @param detector ScaleGestureDetector
+         * @return
+         */
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             scaleFactor *= detector.getScaleFactor();
             zoom = true;
             Log.i("OG", String.valueOf(scaleFactor));
             listBitmap.clear();
-            if(scaleFactor>prevScaleFactor){
+            if(scaleFactor>prevScaleFactor){ //si on a zoomé
                 for (int i =0; i<OGBitmap.size();i++){
-                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),OGBitmap.get(i).getWidth(), OGBitmap.get(i).getHeight(), true);
+                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),OGBitmap.get(i).getWidth(), OGBitmap.get(i).getHeight(), true); //on agrandit les photos
                     listBitmap.add(resized);
 
                 }
 
             }else{
-                for (int i =0; i<OGBitmap.size();i++){
-                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),216, 200, true);
+                for (int i =0; i<OGBitmap.size();i++){//sinon on revient a la taille initiale des photos
+
+                    Bitmap resized = Bitmap.createScaledBitmap(OGBitmap.get(i),displayWidth/5, 120, true);
                     listBitmap.add(resized);
                 }
             }

@@ -6,106 +6,86 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.app.Activity;
-import android.database.Cursor;
-import android.graphics.Paint;
-import android.net.Uri;
-import android.os.Bundle;
-import android.provider.MediaStore;
 
-import java.util.ArrayList;
+import android.content.Intent;
+import android.os.Bundle;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Bundle;
-import android.widget.Toast;
+import android.util.Log;
 
 
+/**
+ * class MainActivity
+ * Lorsqu'elle est créée, on verifie les permissions d'accéder aux photos de la gallery
+ * on charge la vue PhotoView si la permission est accordée
+ */
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        checkPermissionREAD_EXTERNAL_STORAGE(this);
-        if (checkPermissionREAD_EXTERNAL_STORAGE(this)) {
+        if(isStoragePermissionGranted()) {
+
             PhotoView view = new PhotoView(this);
             setContentView(view);
         }
 
     }
 
-
-    public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 123;
-
-    public boolean checkPermissionREAD_EXTERNAL_STORAGE(
-            final Context context) {
-        int currentAPIVersion = Build.VERSION.SDK_INT;
-        if (currentAPIVersion >= android.os.Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(context,
-                    Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(
-                        (Activity) context,
-                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                    showDialog("External storage", context,
-                            Manifest.permission.READ_EXTERNAL_STORAGE);
-
-                } else {
-                    ActivityCompat
-                            .requestPermissions(
-                                    (Activity) context,
-                                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                                    MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
-                }
-                return false;
-            } else {
+    /**
+     *  Fonction qui permet de demander la permission d'acceder aux photos
+     *
+     * @return boolean, true si permission accordée, false sinon
+     */
+    public  boolean isStoragePermissionGranted() {
+        String TAG = "logcheck";
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) //si la permission est accordée
+                    == PackageManager.PERMISSION_GRANTED ) {
+                Log.v(TAG,"Permission is granted");
                 return true;
-            }
+            } else { //sinon
 
-        } else {
+                Log.v(TAG,"Permission is revoked");
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                return false;
+            }
+        }
+        else { //permission is automatically granted on sdk<23 upon installation
+            Log.v(TAG,"Permission is granted");
             return true;
         }
-
-
     }
 
+    /**
+     * Fonction qui gère le resultat de la permission d'accéder aux photos
+     * si elle est accordée, on relance l'activité
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
 
-    public void showDialog(final String msg, final Context context,
-                           final String permission) {
-        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
-        alertBuilder.setCancelable(true);
-        alertBuilder.setTitle("Permission necessary");
-        alertBuilder.setMessage(msg + " permission is necessary");
-        alertBuilder.setPositiveButton(android.R.string.yes,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        ActivityCompat.requestPermissions((Activity) context,
-                                new String[]{permission},
-                                MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
-                    }
-                });
-        AlertDialog alert = alertBuilder.create();
-        alert.show();
-    }
+        boolean flag;
+        flag = true;
+        if(requestCode == 1)
+        {
+            for (int i:grantResults)
+            {
+                if( i == PackageManager.PERMISSION_DENIED)
+                    flag = false;
 
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // do your stuff
-                } else {
-
-
-                }
-                break;
-            default:
-                super.onRequestPermissionsResult(requestCode, permissions,
-                        grantResults);
+            }
+            if (flag)
+            {
+                Intent intent = new Intent(this,MainActivity.class);
+                finish();
+                startActivity(intent);
+            }
         }
     }
 }
