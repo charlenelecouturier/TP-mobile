@@ -56,7 +56,7 @@ private int displayWidth,displayHeight;
         listBitmap = new ArrayList<Bitmap>();
         OGBitmap = new ArrayList<Bitmap>();
 
-        for (int i = 0; i < urlPhotos.size() && i<16; i++) { //on limite à 16 pour la fluidité
+        for (int i = 0; i < urlPhotos.size() && i<100; i++) { //on limite à 16 pour la fluidité
 
             File f = new File(urlPhotos.get(i));
             BitmapFactory.Options option = new BitmapFactory.Options();
